@@ -11,10 +11,25 @@ import wikipedia
 import json
 import wolframalpha
 import pafy
-import re, requests, subprocess, urllib.parse, urllib.request
 from bs4 import BeautifulSoup
+import re
+import subprocess
+import urllib.parse
+import urllib.request
 import vlc
 import openai
+
+#GUI imports
+import kivy
+import threading
+from kivy.app import App
+from kivy.uix.button import Button
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+#from main import Backend
+import sys
+
+
 class Backend:
     def __init__(self):
         self.engine = pyttsx3.init('sapi5')
@@ -37,32 +52,6 @@ class Backend:
         self.engine.say(text)
         self.engine.runAndWait()
 
-     # Function to listen and response to the user commands
-    def my_command(self):
-        r = sr.Recognizer()
-        with sr.Microphone() as source:
-            print("Listening...")
-            r.pause_threshold = 1
-            r.energy_threshold = 300
-            audio = r.listen(source)
-            """the energy_threshold parameter is set to 300,
-            which indicates that the microphone recognition system should stop listening as soon as
-            the audio energy drops below this threshold.
-            The pause_threshold parameter is set to 1 second, 
-            which means that the system will wait 1 second after the user stops speaking 
-            before considering the audio to be complete."""
-
-        try:
-            query = r.recognize_google(audio, language='en-in', show_all=True)
-            print(f'User: {query}' + '\n')
-            best_result = query["alternative"][0]["transcript"]
-            print(f"Best Result: {best_result}")
-        except sr.UnknownValueError:
-            self.speak('Sorry, could not understand. Please try again.')
-            query = self.my_command() # recursive call to the function to try again
-
-        return best_result
-
     # Function to greet the user
     def greet_me(self):
         current_hour = int(datetime.datetime.now().hour)
@@ -78,7 +67,22 @@ class Backend:
         greetings = ["How can I help you today?", "What can I do for you?", "How can I assist you?", "What do you need?", "Is there anything I can help you with?"]
         self.speak(random.choice(greetings))
 
-   
+    # Function to listen and response to the user commands
+    def my_command(self):
+        r = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Listening...")
+            r.pause_threshold = 1
+            audio = r.listen(source)
+
+        try:
+            query = r.recognize_google(audio, language='en-in')
+            print(f'User: {query}' + '\n')
+        except sr.UnknownValueError:
+            self.speak('Sorry, could not understand. Please try again.')
+            query = self.my_command() # recursive call to the function to try again
+
+        return query
 
     # Function to search YouTube
     def youtubeSearch(self,query):
@@ -152,7 +156,6 @@ class Backend:
                 self.speak(f"Definition of {query} in {topic} : {definition}")
             else:
                 self.speak(f"Definition of {query}: {definition}")
-            print(definition)
         elif topic:
             self.speak(f"Sorry, I couldn't find a definition for {query} in topic {topic}.")
         else:
@@ -248,9 +251,62 @@ class Backend:
 
     # Function to get answers from GPT-3
     def get_gpt_response(self,query):
-        openai.api_key = "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"
+        openai.api_key = "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"
         response = openai.Completion.create(
-        engine="text-davinci-002", prompt=query, max_tokens=1024)
+            engine="text-davinci-002", prompt=query, max_tokens=1024)
         answer = response["choices"][0]["text"]
         self.speak(answer)
    
+
+class MyApp(App):
+    def build(self):
+        root = BoxLayout(orientation="vertical")
+        label = Label(text="Welcome to my App")
+        start_button = Button(text="Start", on_press=self.start)
+        root.add_widget(label)
+        root.add_widget(start_button)
+        return root
+
+
+    def start(self, instance):
+        backend = Backend()
+        
+        # Front-end code
+        while backend.running:
+            if __name__ == '__main__':
+
+                query = backend.my_command();
+                query = query.lower()
+                
+                # Logic to execute tasks based on the query
+                if 'open youtube' in query:
+                    backend.youtubeSearch(query)
+
+                elif 'open website'in query:
+                    backend.openWebsite(query)
+
+                elif 'date and time' in query:
+                    backend.speakDateTime()
+
+                elif 'talk like a friend' in query:
+                    backend.friendTalk()
+
+                elif 'define' in query:
+                    backend.getDefinition(query)
+
+                elif 'wolf' in query:
+                    backend.getWolframAlpha(query)
+                
+
+                elif 'quit' in query:
+                    backend.exitCommand()
+                
+                elif "play music" in query:
+                    backend.play_song(query)
+                    
+                else:
+                    backend.get_gpt_response(query)
+if __name__ == "__main__":
+    MyApp().run()
+
+ 
