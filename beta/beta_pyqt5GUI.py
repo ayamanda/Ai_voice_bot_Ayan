@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QTextEdit, QHBoxLayout, QVBoxLayout, QGroupBox, QGridLayout
 from PyQt5.QtGui import QTextCursor, QIcon
 from PyQt5.QtCore import Qt, QSize
-from main import Backend
+from beta_main import Backend
 
 class MyApp(QMainWindow):
     def __init__(self):
@@ -34,7 +34,7 @@ class MyApp(QMainWindow):
 
         # Adding the start button
         mic_button = QPushButton(self)
-        mic_button.setIcon(QIcon('mic.png'))
+        mic_button.setIcon(QIcon('D:\python\ai voice bot\mic.png'))
         mic_button.setIconSize(QSize(20, 20))
         mic_button.setStyleSheet("background-color: #4CAF50; color: white; border: none; border-radius: 5px; padding: 10px 20px; font-size: 14px;")
         mic_button.clicked.connect(self.start_voice_input)
@@ -55,37 +55,9 @@ class MyApp(QMainWindow):
         
     def process_query(self, query):
         try:
-            if not query:
-             return
-
-            query = query.lower()
             old_stdout = sys.stdout
             sys.stdout = self
-            
-            if 'open youtube' in query:
-                self.backend.youtubeSearch(query)
-
-            elif 'open website'in query:
-                self.backend.openWebsite(query)
-
-            elif 'date and time' in query:
-                self.backend.speakDateTime()
-
-            elif 'talk like a friend' in query:
-                self.backend.friendTalk()
-
-            elif 'define' in query:
-                self.backend.getDefinition(query)
-
-            elif 'calculate' in query:
-                self.backend.getWolframAlpha(query)
-
-            elif 'quit' in query:
-                self.backend.exitCommand()
-            
-            elif "play music" in query:
-                self.backend.play_song(query)
-                
+            self.backend.process(query)
             sys.stdout = old_stdout
 
         except Exception as e:
@@ -93,12 +65,12 @@ class MyApp(QMainWindow):
 
     def start_text_input(self):
         query = self.text_input.toPlainText().strip()
-        self.process_query(query)
+        self.backend.process_query(query)
         self.text_input.clear()
 
     def start_voice_input(self):
         query = self.backend.my_command()
-        self.process_query(query)
+        self.backend.process_query(query)
 
     def closeEvent(self, event):
         event.accept()
